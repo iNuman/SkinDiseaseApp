@@ -2,6 +2,7 @@ package com.example.skindiseaseapp.ui.screens.common_view_model
 
 //import com.example.skindiseaseapp.ui.screens.schedules.notifications.ScheduleNotification
 import android.content.Context
+import android.graphics.Bitmap
 import androidx.compose.material3.DatePickerState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.TimePickerState
@@ -49,6 +50,11 @@ class HomeViewModel @Inject constructor(
     val bodyPartsState: StateFlow<List<BodyParts>> = _bodyPartsState.asStateFlow()
 
 
+    private val _bitmaps = MutableStateFlow<List<Bitmap>>(emptyList())
+    val bitmaps = _bitmaps.asStateFlow()
+
+
+
     fun handleBodyPartEvent(event: BodyPartsScreenEvent) {
         when (event) {
             is BodyPartsScreenEvent.GetFullBody -> getBodyParts(BodyType.FullBody)
@@ -83,6 +89,10 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    fun onTakePhoto(bitmap: Bitmap) {
+        _bitmaps.value += bitmap
+    }
+
 
     fun handleScreenEvents(event: SchedulesScreenEvent) {
         when (event) {
@@ -99,6 +109,7 @@ class HomeViewModel @Inject constructor(
             is SchedulesScreenEvent.ProfileIconInHomeClicked -> statusClearCache(event.isProfileIconInHomeClicked)
         }
     }
+
 
     @OptIn(ExperimentalMaterial3Api::class)
     fun onScheduleButtonClicked(

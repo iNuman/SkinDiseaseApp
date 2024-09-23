@@ -19,11 +19,11 @@ import com.example.skindiseaseapp.navigation.utils.Routes
 import com.example.skindiseaseapp.ui.screens.appstate.MainAppState
 import com.example.skindiseaseapp.ui.screens.home.HomeScreenNavigationRoute
 import com.example.skindiseaseapp.ui.screens.home.homeScreen
-import com.example.skindiseaseapp.ui.screens.home.navigateToScanLesionScreen
-import com.example.skindiseaseapp.ui.screens.home.scanLesionScreen
 import com.example.skindiseaseapp.ui.screens.login.LoginScreenNavigationRoute
 import com.example.skindiseaseapp.ui.screens.login.googlesignin.GoogleAuthUiClient
 import com.example.skindiseaseapp.ui.screens.login.loginScreen
+import com.example.skindiseaseapp.ui.screens.scan_lesion.navigateToScanLesionScreen
+import com.example.skindiseaseapp.ui.screens.scan_lesion.scanLesionScreen
 import com.example.skindiseaseapp.ui.screens.schedules.CreateSchedulesScreenNavigationRoute
 import com.example.skindiseaseapp.ui.screens.schedules.SchedulesScreenNavigationRoute
 import com.example.skindiseaseapp.ui.screens.schedules.SchedulesScreenRoute

@@ -1,4 +1,4 @@
-package com.example.skindiseaseapp.ui.screens.home
+package com.example.skindiseaseapp.ui.screens.scan_lesion
 
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope

@@ -5,6 +5,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CornerSize
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.FloatingActionButtonElevation
 import androidx.compose.material3.Icon
@@ -54,6 +55,31 @@ fun CommonFloatingButton(
         interactionSource = interactionSource
     ) {
         Icon(imageVector = image, contentDescription = "", modifier.size(32.sdp))
+    }
+}
+
+@Composable
+fun CommonFloatingButtonSmall(
+    image: ImageVector,
+    modifier: Modifier = Modifier,
+    interactionSource: MutableInteractionSource? = null,
+    shape: Shape = MaterialTheme.shapes.small.copy(CornerSize(percent = 50)),
+    backgroundColor: Color = MaterialTheme.colorScheme.secondary,
+    contentColor: Color = contentColorFor(backgroundColor),
+    elevation: FloatingActionButtonElevation = FloatingActionButtonDefaults.elevation(),
+    onClick: () -> Unit,
+) {
+
+    FloatingActionButton(
+        onClick = { onClick() },
+        shape = shape,
+        modifier = modifier.scale(0.8f),
+        containerColor = backgroundColor,
+        contentColor = contentColor,
+        elevation = elevation,
+        interactionSource = interactionSource
+    ) {
+        Icon(imageVector = image, contentDescription = "", modifier.size(24.sdp))
     }
 }
 

@@ -58,4 +58,5 @@
     <string name="allow">Allow</string>
     <string name="camera_permission_rationale_title">Camera Permission Required for Video Calls</string>
     <string name="camera_permission_rationale_message">This app needs access to your camera to allow you to make video calls. You can grant this permission in the app settings.</string>
+    <string name="instructions">Instructions</string>
 </resources>

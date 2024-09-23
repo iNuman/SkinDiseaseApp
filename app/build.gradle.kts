@@ -124,6 +124,13 @@ plugins {
         implementation(libs.roomKtx)
         implementation(libs.roomKtx)
 
+        // CameraX
+        implementation(libs.camera.core)
+        implementation(libs.camera.camera2)
+        implementation(libs.camera.lifecycle)
+        implementation(libs.camera.view)
+        implementation(libs.camera.extensions)
+
 
         testImplementation(libs.junit)
         androidTestImplementation(libs.androidx.junit)
