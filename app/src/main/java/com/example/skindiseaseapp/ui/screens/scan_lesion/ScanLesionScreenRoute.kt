@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
@@ -353,60 +354,62 @@ fun ImageCropper(bitmap: Bitmap? = null) {
                         shape = RoundedCornerShape(12.sdp)
                     )
             ) {
-                Column {
-                    croppedImageBitmap?.let {
-                        ZoomableImage(
+                croppedImageBitmap?.let {
+                    ZoomableImage(
+                        modifier = Modifier
+                            .offset(y = 31.sdp),
                             imageBitmap = it,
                             contentScale = ContentScale.Crop,
                             clipTransformToContentScale = true
                         )
+                    Spacer(modifier = Modifier.size(12.sdp))
+                }
+            }
+
+                Spacer(modifier = Modifier.size(12.sdp))
+
+                // Zoom level buttons
+                Row(
+                    modifier = Modifier
+                        .wrapContentWidth()
+                        .padding(bottom = 12.sdp, start = 12.sdp, end = 12.sdp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    ElevatedButton(
+                        onClick = { /* Zoom level 1x */ },
+                        shape = RoundedCornerShape(32.sdp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = White,
+                            contentColor = Black
+                        )
+                    ) {
+                        CommonText(
+                            text = stringResource(R.string._1x),
+                            fontFamily = medium,
+                            textColor = Black,
+                            textSize = 12.ssp,
+                        )
+                    }
+                    Spacer(modifier = Modifier.size(18.sdp))
+                    ElevatedButton(
+                        onClick = { /* Zoom level 2x */ },
+                        shape = RoundedCornerShape(32.sdp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = White,
+                            contentColor = Black
+                        )
+                    ) {
+                        CommonText(
+                            text = stringResource(R.string._2x),
+                            fontFamily = medium,
+                            textColor = Black,
+                            textSize = 12.ssp,
+                        )
                     }
                 }
             }
-            Spacer(modifier = Modifier.size(12.sdp))
-
-            // Zoom level buttons
-            Row(
-                modifier = Modifier
-                    .wrapContentWidth()
-                    .padding(bottom = 12.sdp, start = 12.sdp, end = 12.sdp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                ElevatedButton(
-                    onClick = { /* Zoom level 1x */ },
-                    shape = RoundedCornerShape(32.sdp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = White,
-                        contentColor = Black
-                    )
-                ) {
-                    CommonText(
-                        text = stringResource(R.string._1x),
-                        fontFamily = medium,
-                        textColor = Black,
-                        textSize = 12.ssp,
-                    )
-                }
-                Spacer(modifier = Modifier.size(18.sdp))
-                ElevatedButton(
-                    onClick = { /* Zoom level 2x */ },
-                    shape = RoundedCornerShape(32.sdp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = White,
-                        contentColor = Black
-                    )
-                ) {
-                    CommonText(
-                        text = stringResource(R.string._2x),
-                        fontFamily = medium,
-                        textColor = Black,
-                        textSize = 12.ssp,
-                    )
-                }
-            }
         }
-    }
 }
 
 fun extractImageForOverlay(
