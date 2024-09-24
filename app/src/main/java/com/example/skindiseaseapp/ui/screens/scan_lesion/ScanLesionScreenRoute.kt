@@ -15,6 +15,7 @@ import androidx.camera.view.LifecycleCameraController
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,6 +23,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -72,6 +74,7 @@ import com.example.skindiseaseapp.ui.screens.common.CommonFloatingButtonWithText
 import com.example.skindiseaseapp.ui.screens.common.CommonText
 import com.example.skindiseaseapp.ui.screens.common_view_model.HomeViewModel
 import com.example.skindiseaseapp.ui.screens.scan_lesion.zoom.ZoomableImage
+import com.example.skindiseaseapp.ui.screens.scan_lesion.zoom.zoom
 import com.example.skindiseaseapp.ui.theme.White
 import com.example.skindiseaseapp.ui.theme.medium
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
@@ -81,6 +84,7 @@ import com.plcoding.cameraxguide.CameraPreview
 import kotlinx.coroutines.launch
 import network.chaintech.sdpcomposemultiplatform.sdp
 import network.chaintech.sdpcomposemultiplatform.ssp
+import kotlin.math.roundToInt
 
 
 @OptIn(
@@ -308,73 +312,74 @@ fun ImageCropper(bitmap: Bitmap? = null) {
             overlayHeightInDp = overlayHeight.toDp()
         }
 
-        val imageWidth = constraints.maxWidth
-        val imageHeight = constraints.maxHeight
-        // Load the image
+        val imageWidth = constraints.maxWidth.toFloat()
+        val imageHeight = constraints.maxHeight.toFloat()
+
+        // Load the image with correct scaling mode
         Image(
             modifier = Modifier
                 .fillMaxSize(),
-            contentScale = ContentScale.Crop,
+            contentScale = ContentScale.Crop,  // Make sure it's aligned with the displayed image
             painter = rememberAsyncImagePainter(
                 model = bitmap
             ),
             contentDescription = stringResource(R.string.image_for_cropping)
         )
-        Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center) {
+        // Extract the cropped image based on overlay
+        val extractedBitmap = extractImageForOverlay(
+            bitmap,
+            overlayWidth,
+            overlayHeight,
+            imageWidth,
+            imageHeight,
+            minSize // 550f x 550f
+        )
 
-            val croppedBitmap = cropBitmap(
-                bitmap,
-                overlayWidth,
-                overlayHeight,
-                imageWidth.toFloat(),
-                imageHeight.toFloat()
-            )
-            val croppedImageBitmap = croppedBitmap?.asImageBitmap()
+        val croppedImageBitmap = extractedBitmap?.asImageBitmap()
+
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+
+            // Overlay box with border
             Box(
                 modifier = Modifier
-                    .align(Alignment.CenterHorizontally) // Center horizontally
+                    .align(Alignment.CenterHorizontally)
                     .size(overlayWidthInDp, overlayHeightInDp)
                     .border(
                         border = BorderStroke(5.sdp, Color.White),
                         shape = RoundedCornerShape(12.sdp)
                     )
-
             ) {
-                croppedImageBitmap?.let {
-                    ZoomableImage(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .border(
-                                border = BorderStroke(0.sdp, Color.White),
-                                shape = RoundedCornerShape(12.sdp)
-                            )
-                            .padding(3.sdp),
-                        imageBitmap = it,
-                        contentScale = ContentScale.Crop,
-                        clipTransformToContentScale = true
-                    )
+                Column {
+                    croppedImageBitmap?.let {
+                        ZoomableImage(
+                            imageBitmap = it,
+                            contentScale = ContentScale.Crop,
+                            clipTransformToContentScale = true
+                        )
+                    }
                 }
             }
+            Spacer(modifier = Modifier.size(12.sdp))
 
-            Spacer(modifier = Modifier.size(size = 12.sdp))
+            // Zoom level buttons
             Row(
                 modifier = Modifier
                     .wrapContentWidth()
-                    .align(Alignment.CenterHorizontally)
                     .padding(bottom = 12.sdp, start = 12.sdp, end = 12.sdp),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-
                 ElevatedButton(
-                    modifier = Modifier
-                        .wrapContentWidth(),
-                    onClick = { },
+                    onClick = { /* Zoom level 1x */ },
                     shape = RoundedCornerShape(32.sdp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = White,
                         contentColor = Black
-                    ),
+                    )
                 ) {
                     CommonText(
                         text = stringResource(R.string._1x),
@@ -383,16 +388,14 @@ fun ImageCropper(bitmap: Bitmap? = null) {
                         textSize = 12.ssp,
                     )
                 }
-                Spacer(modifier = Modifier.size(size = 18.sdp))
+                Spacer(modifier = Modifier.size(18.sdp))
                 ElevatedButton(
-                    modifier = Modifier
-                        .wrapContentWidth(),
-                    onClick = { },
+                    onClick = { /* Zoom level 2x */ },
                     shape = RoundedCornerShape(32.sdp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = White,
                         contentColor = Black
-                    ),
+                    )
                 ) {
                     CommonText(
                         text = stringResource(R.string._2x),
@@ -401,36 +404,54 @@ fun ImageCropper(bitmap: Bitmap? = null) {
                         textSize = 12.ssp,
                     )
                 }
-
             }
         }
     }
 }
 
-// Function to crop the bitmap based on the overlay box
-fun cropBitmap(
+fun extractImageForOverlay(
     bitmap: Bitmap?,
     overlayWidth: Float,
     overlayHeight: Float,
     imageWidth: Float,
     imageHeight: Float,
+    targetSize: Float = 550f // Fixed overlay size: 550x550
 ): Bitmap? {
     if (bitmap == null) return null
 
-    // Calculate the cropping area based on overlay and image scaling
+    // Calculate scaling factors between the displayed image and the original bitmap
     val scaleX = bitmap.width / imageWidth
     val scaleY = bitmap.height / imageHeight
 
-    val cropX = (imageWidth / 2 - overlayWidth / 2) * scaleX
-    val cropY = (imageHeight / 2 - overlayHeight / 2) * scaleY
-    val cropWidth = overlayWidth * scaleX
-    val cropHeight = overlayHeight * scaleY
+    // Use the minimum scale to ensure correct aspect ratio
+    val scale = minOf(scaleX, scaleY)
 
-    return Bitmap.createBitmap(
+    // Calculate the width and height of the overlay in terms of the bitmap's dimensions
+    val overlayBitmapWidth = (overlayWidth * scale).toInt()
+    val overlayBitmapHeight = (overlayHeight * scale).toInt()
+
+    // Centering the overlay, calculate the crop's top-left position in bitmap
+    val cropX = ((bitmap.width / 2) - (overlayBitmapWidth / 2)).coerceAtLeast(0)
+    val cropY = ((bitmap.height / 2) - (overlayBitmapHeight / 2)).coerceAtLeast(0)
+
+    // Ensure the crop area stays within the bitmap bounds
+    val safeCropX = cropX.coerceAtMost(bitmap.width - overlayBitmapWidth)
+    val safeCropY = cropY.coerceAtMost(bitmap.height - overlayBitmapHeight)
+
+    // Create the cropped bitmap using the calculated crop region
+    val croppedBitmap = Bitmap.createBitmap(
         bitmap,
-        cropX.toInt(),
-        cropY.toInt(),
-        cropWidth.toInt(),
-        cropHeight.toInt()
+        safeCropX,
+        safeCropY,
+        overlayBitmapWidth.coerceAtMost(bitmap.width - safeCropX),
+        overlayBitmapHeight.coerceAtMost(bitmap.height - safeCropY)
+    )
+
+    // Resize the cropped bitmap to exactly match the overlay target size
+    return Bitmap.createScaledBitmap(
+        croppedBitmap,
+        targetSize.toInt(),   // Width: 550
+        targetSize.toInt(),   // Height: 550
+        true                  // Apply filtering for smooth resizing
     )
 }
