@@ -355,15 +355,24 @@ fun ImageCropper(bitmap: Bitmap? = null) {
                     )
             ) {
                 croppedImageBitmap?.let {
-                    ZoomableImage(
+                    Image(
                         modifier = Modifier
-                            .offset(y = 31.sdp),
-                            imageBitmap = it,
-                            contentScale = ContentScale.Crop,
-                            clipTransformToContentScale = true
-                        )
+                            .offset(y= 31.sdp),
+                        contentScale = ContentScale.Crop,
+                        bitmap = it,
+                        contentDescription = stringResource(R.string.image_for_cropping)
+                    )
                     Spacer(modifier = Modifier.size(12.sdp))
                 }
+//                ZoomableImage(
+//                        modifier = Modifier
+//                            .offset(y = 31.sdp),
+//                            imageBitmap = it,
+//                            contentScale = ContentScale.Crop,
+//                            clipTransformToContentScale = true
+//                        )
+//                    Spacer(modifier = Modifier.size(12.sdp))
+//                }
             }
 
                 Spacer(modifier = Modifier.size(12.sdp))
