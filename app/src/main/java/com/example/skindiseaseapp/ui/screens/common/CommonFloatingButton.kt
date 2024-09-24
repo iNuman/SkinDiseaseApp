@@ -46,7 +46,7 @@ fun CommonFloatingButton(
 ) {
 
     LargeFloatingActionButton(
-        onClick = { onClick() },
+        onClick = { onClick.invoke() },
         shape = shape,
         modifier = modifier.scale(0.8f),
         containerColor = backgroundColor,

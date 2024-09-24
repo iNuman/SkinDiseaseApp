@@ -1,34 +1,5 @@
 package com.example.skindiseaseapp.ui.screens.scan_lesion
 
-import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material3.Icon
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import com.example.skindiseaseapp.R
-import com.example.skindiseaseapp.ui.permission.RequestCameraPermission
-import com.example.skindiseaseapp.ui.screens.common_view_model.HomeViewModel
-import com.example.skindiseaseapp.ui.theme.medium
-import com.google.accompanist.permissions.isGranted
-import com.google.accompanist.permissions.rememberPermissionState
-import network.chaintech.sdpcomposemultiplatform.sdp
-import network.chaintech.sdpcomposemultiplatform.ssp
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -41,52 +12,73 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
 import androidx.camera.view.CameraController
 import androidx.camera.view.LifecycleCameraController
+import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.rememberBottomSheetScaffoldState
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.Black
-import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Color.Companion.Green
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntOffset
 import androidx.core.content.ContextCompat
 import coil.compose.rememberAsyncImagePainter
+import com.example.skindiseaseapp.R
+import com.example.skindiseaseapp.ui.permission.RequestCameraPermission
+import com.example.skindiseaseapp.ui.screens.common.CommonFloatingButton
 import com.example.skindiseaseapp.ui.screens.common.CommonFloatingButtonSmall
+import com.example.skindiseaseapp.ui.screens.common.CommonFloatingButtonWithText
 import com.example.skindiseaseapp.ui.screens.common.CommonText
+import com.example.skindiseaseapp.ui.screens.common_view_model.HomeViewModel
+import com.example.skindiseaseapp.ui.screens.scan_lesion.zoom.ZoomableImage
 import com.example.skindiseaseapp.ui.theme.White
+import com.example.skindiseaseapp.ui.theme.medium
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
 import com.plcoding.cameraxguide.CameraPreview
 import kotlinx.coroutines.launch
-import kotlin.math.roundToInt
+import network.chaintech.sdpcomposemultiplatform.sdp
+import network.chaintech.sdpcomposemultiplatform.ssp
 
 
 @OptIn(
@@ -155,6 +147,9 @@ fun ScanLesionScreenRoute(
                 modifier = Modifier
                     .fillMaxSize()
             )
+
+            ImageCropper(bitmap = bitmaps.lastOrNull())
+
             Column {
                 ElevatedButton(
                     modifier = Modifier
@@ -183,11 +178,10 @@ fun ScanLesionScreenRoute(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 12.sdp, start = 8.sdp, end = 8.sdp),
+                        .padding(bottom = 12.sdp, start = 12.sdp, end = 12.sdp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.Top
                 ) {
-
                     CommonFloatingButtonSmall(
                         image = Icons.Filled.Close,
                         contentColor = Black,
@@ -212,43 +206,33 @@ fun ScanLesionScreenRoute(
                 }
             }
 
-            ImageCroper(bitmaps)
-//            IconButton(
-//                onClick = {
-//                    controller.cameraSelector =
-//                        if (controller.cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA) {
-//                            CameraSelector.DEFAULT_FRONT_CAMERA
-//                        } else CameraSelector.DEFAULT_BACK_CAMERA
-//                },
-//                modifier = Modifier
-//                    .offset(12.sdp, 12.dp)
-//            ) {
-//                Icon(
-//                    imageVector = Icons.Default.CheckCircle, // cam switch
-//                    contentDescription = "Switch camera"
-//                )
-//            }
-
             Row(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.BottomCenter)
-                    .padding(6.sdp),
-                horizontalArrangement = Arrangement.SpaceAround
+                    .wrapContentWidth()
+                    .align(Alignment.BottomStart)
+                    .padding(bottom = 12.sdp, start = 12.sdp, end = 12.sdp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(
+
+                Spacer(Modifier.size(8.sdp))
+                CommonFloatingButtonSmall(
+                    image = Icons.Default.DateRange,
+                    contentColor = Black,
+                    backgroundColor = Green,
+                    shape = CircleShape,
                     onClick = {
                         scope.launch {
                             scaffoldState.bottomSheetState.expand()
                         }
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Person, // open gallery
-                        contentDescription = "Open gallery"
-                    )
-                }
-                IconButton(
+                    },
+                )
+                Spacer(Modifier.size(60.sdp))
+                CommonFloatingButton(
+                    image = Icons.Filled.Refresh,
+                    contentColor = Black,
+                    backgroundColor = Green,
+                    shape = CircleShape,
                     onClick = {
                         takePhoto(
                             activity = activity,
@@ -256,12 +240,7 @@ fun ScanLesionScreenRoute(
                             onPhotoTaken = viewModel::onTakePhoto
                         )
                     }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.CheckCircle, // capture image
-                        contentDescription = "Take photo"
-                    )
-                }
+                )
             }
         }
     }
@@ -305,7 +284,7 @@ private fun takePhoto(
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Preview(showBackground = true)
 @Composable
-fun ImageCroper(bitmaps: List<Bitmap>) {
+fun ImageCropper(bitmap: Bitmap? = null) {
     BoxWithConstraints {
         val minSize = 550f
         var overlayWidth by remember { mutableFloatStateOf(minSize) }
@@ -321,42 +300,98 @@ fun ImageCroper(bitmaps: List<Bitmap>) {
 
         val imageWidth = constraints.maxWidth
         val imageHeight = constraints.maxHeight
-
         // Load the image
         Image(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize(),
             contentScale = ContentScale.Crop,
             painter = rememberAsyncImagePainter(
-                model = bitmaps.lastOrNull()
-                    ?: "https://i.picsum.photos/id/216/200/200.jpg?hmac=7Weas8POu49YrmUyJ6tWdqVMx-hw6lryzl8HnHZBzjc"
+                model = bitmap
             ),
-            contentDescription = "Image for cropping"
+            contentDescription = stringResource(R.string.image_for_cropping)
         )
-        val croppedBitmap = cropBitmap(
-            bitmaps.lastOrNull(),
-            overlayWidth,
-            overlayHeight,
-            imageWidth.toFloat(),
-            imageHeight.toFloat()
-        )
-        val croppedImageBitmap = croppedBitmap?.asImageBitmap()
-        // Overlay Box - This is where the cropping will be done
-        Box(
-            modifier = Modifier
-                .align(Alignment.Center)
-                .border(
-                    border = BorderStroke(2.dp, Color.White),
-                    shape = RoundedCornerShape(12.sdp)
-                ) // Rounded border
-                .size(overlayWidthInDp, overlayHeightInDp)
-        ) {
-            croppedImageBitmap?.let {
-                Image(
-                    modifier = Modifier.fillMaxSize(),
-                    bitmap = it,
-                    contentScale = ContentScale.Crop,
-                    contentDescription = "Cropped image"
-                )
+        Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center) {
+
+            val croppedBitmap = cropBitmap(
+                bitmap,
+                overlayWidth,
+                overlayHeight,
+                imageWidth.toFloat(),
+                imageHeight.toFloat()
+            )
+            val croppedImageBitmap = croppedBitmap?.asImageBitmap()
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally) // Center horizontally
+                    .size(overlayWidthInDp, overlayHeightInDp)
+                    .border(
+                        border = BorderStroke(5.sdp, Color.White),
+                        shape = RoundedCornerShape(12.sdp)
+                    )
+
+            ) {
+                croppedImageBitmap?.let {
+                    ZoomableImage(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .border(
+                                border = BorderStroke(0.sdp, Color.White),
+                                shape = RoundedCornerShape(12.sdp)
+                            )
+                            .padding(3.sdp),
+                        imageBitmap = it,
+                        contentScale = ContentScale.Crop,
+                        clipTransformToContentScale = true
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.size(size = 12.sdp))
+            Row(
+                modifier = Modifier
+                    .wrapContentWidth()
+                    .align(Alignment.CenterHorizontally)
+                    .padding(bottom = 12.sdp, start = 12.sdp, end = 12.sdp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+
+                ElevatedButton(
+                    modifier = Modifier
+                        .wrapContentWidth(),
+                    onClick = { },
+                    shape = RoundedCornerShape(32.sdp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = White,
+                        contentColor = Black
+                    ),
+                ) {
+                    CommonText(
+                        text = stringResource(R.string._1x),
+                        fontFamily = medium,
+                        textColor = Black,
+                        textSize = 12.ssp,
+                    )
+                }
+                Spacer(modifier = Modifier.size(size = 18.sdp))
+                ElevatedButton(
+                    modifier = Modifier
+                        .wrapContentWidth(),
+                    onClick = { },
+                    shape = RoundedCornerShape(32.sdp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = White,
+                        contentColor = Black
+                    ),
+                ) {
+                    CommonText(
+                        text = stringResource(R.string._2x),
+                        fontFamily = medium,
+                        textColor = Black,
+                        textSize = 12.ssp,
+                    )
+                }
+
             }
         }
     }
@@ -368,7 +403,7 @@ fun cropBitmap(
     overlayWidth: Float,
     overlayHeight: Float,
     imageWidth: Float,
-    imageHeight: Float
+    imageHeight: Float,
 ): Bitmap? {
     if (bitmap == null) return null
 

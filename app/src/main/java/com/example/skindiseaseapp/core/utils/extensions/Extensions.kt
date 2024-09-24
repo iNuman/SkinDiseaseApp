@@ -11,3 +11,4 @@ fun Activity.openAppSetting() {
         Uri.fromParts("package", packageName, null)
     ).also(::startActivity)
 }
+
