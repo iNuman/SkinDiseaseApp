@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -32,6 +33,31 @@ import com.example.skindiseaseapp.ui.theme.bold
 import com.example.skindiseaseapp.ui.theme.medium
 import network.chaintech.sdpcomposemultiplatform.sdp
 import network.chaintech.sdpcomposemultiplatform.ssp
+
+@Composable
+fun CameraCaptureButton(
+    modifier: Modifier = Modifier,
+    interactionSource: MutableInteractionSource? = null,
+    shape: Shape = MaterialTheme.shapes.small.copy(CornerSize(percent = 50)),
+    backgroundColor: Color = MaterialTheme.colorScheme.secondary,
+    contentColor: Color = contentColorFor(backgroundColor),
+    elevation: FloatingActionButtonElevation = FloatingActionButtonDefaults.elevation(),
+    onClick: () -> Unit,
+) {
+
+    LargeFloatingActionButton(
+        modifier = modifier.scale(0.8f),
+        shape = shape,
+        containerColor = backgroundColor,
+        contentColor = contentColor,
+        elevation = elevation,
+        interactionSource = interactionSource,
+        onClick = { onClick.invoke() },
+
+        ) {
+//        Icon(imageVector = image, contentDescription = "", modifier.size(32.sdp))
+    }
+}
 
 @Composable
 fun CommonFloatingButton(

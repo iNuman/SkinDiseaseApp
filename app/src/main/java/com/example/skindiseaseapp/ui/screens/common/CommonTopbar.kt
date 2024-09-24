@@ -121,7 +121,7 @@ fun CommonTopAppBar(
                 AsyncImage(
                     model = defaultAvatar,
                     contentScale = ContentScale.FillBounds,
-                    contentDescription = "Profile Image",
+                    contentDescription = stringResource(R.string.profile_image),
                     modifier = Modifier
                         .size(32.sdp)
                         .clip(RoundedCornerShape(50.sdp))

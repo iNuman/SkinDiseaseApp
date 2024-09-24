@@ -48,6 +48,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.Black
 import androidx.compose.ui.graphics.Color.Companion.Green
@@ -64,6 +65,7 @@ import androidx.core.content.ContextCompat
 import coil.compose.rememberAsyncImagePainter
 import com.example.skindiseaseapp.R
 import com.example.skindiseaseapp.ui.permission.RequestCameraPermission
+import com.example.skindiseaseapp.ui.screens.common.CameraCaptureButton
 import com.example.skindiseaseapp.ui.screens.common.CommonFloatingButton
 import com.example.skindiseaseapp.ui.screens.common.CommonFloatingButtonSmall
 import com.example.skindiseaseapp.ui.screens.common.CommonFloatingButtonWithText
@@ -216,6 +218,7 @@ fun ScanLesionScreenRoute(
             ) {
 
                 Spacer(Modifier.size(8.sdp))
+
                 CommonFloatingButtonSmall(
                     image = Icons.Default.DateRange,
                     contentColor = Black,
@@ -228,8 +231,15 @@ fun ScanLesionScreenRoute(
                     },
                 )
                 Spacer(Modifier.size(60.sdp))
-                CommonFloatingButton(
-                    image = Icons.Filled.Refresh,
+                CameraCaptureButton(
+                    modifier = Modifier
+                        .size(64.sdp)
+                        .clip(RoundedCornerShape(50.sdp))
+                        .border(
+                            1.sdp,
+                            Color.White,
+                            shape = RoundedCornerShape(50.sdp)
+                        ),
                     contentColor = Black,
                     backgroundColor = Green,
                     shape = CircleShape,
