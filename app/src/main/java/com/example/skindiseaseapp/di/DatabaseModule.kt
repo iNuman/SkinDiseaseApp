@@ -9,11 +9,14 @@ import com.example.skindiseaseapp.data.repositories.INotificationsRepository
 import com.example.skindiseaseapp.data.repositories.ISkinAppRepository
 import com.example.skindiseaseapp.data.repositories.impl.NotificationRepositoryImpl
 import com.example.skindiseaseapp.data.repository.SkinAppRepositoryImpl
+import com.oguzdogdu.walliescompose.data.di.Dispatcher
+import com.oguzdogdu.walliescompose.data.di.SkinAppDispatchers
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.CoroutineDispatcher
 import javax.inject.Singleton
 
 @Module
@@ -44,5 +47,8 @@ object DatabaseModule {
 
     @Singleton
     @Provides
-    fun provideSkinAppRepo(): ISkinAppRepository = SkinAppRepositoryImpl()
+    fun provideSkinAppRepo(@Dispatcher(SkinAppDispatchers.IO) ioDispatcher: CoroutineDispatcher): ISkinAppRepository = SkinAppRepositoryImpl(ioDispatcher)
+//    @Singleton
+//    @Provides
+//    fun provideSkinAppRepo(): ISkinAppRepository = SkinAppRepositoryImpl()
 }

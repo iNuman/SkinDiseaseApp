@@ -14,11 +14,13 @@ import com.example.skindiseaseapp.data.repositories.INotificationsRepository
 import com.example.skindiseaseapp.data.repositories.ISkinAppRepository
 import com.example.skindiseaseapp.domain.model.body.BodyParts
 import com.example.skindiseaseapp.domain.model.body.BodyType
+import com.example.skindiseaseapp.domain.model.bottom_sheet.OnBoardingDataClass
 import com.example.skindiseaseapp.domain.wrapper.Resource
 import com.example.skindiseaseapp.domain.wrapper.onFailure
 import com.example.skindiseaseapp.domain.wrapper.onLoading
 import com.example.skindiseaseapp.domain.wrapper.onSuccess
 import com.example.skindiseaseapp.ui.screens.home.events.BodyPartsScreenEvent
+import com.example.skindiseaseapp.ui.screens.home.events.BottomSheetOnBoardingScreenEvent
 import com.example.skindiseaseapp.ui.screens.schedules.SchedulesScreenState
 import com.oguzdogdu.walliescompose.features.settings.SchedulesScreenEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -49,6 +51,9 @@ class HomeViewModel @Inject constructor(
     private val _bodyPartsState = MutableStateFlow<List<BodyParts>>(emptyList())
     val bodyPartsState: StateFlow<List<BodyParts>> = _bodyPartsState.asStateFlow()
 
+    private val _bottomSheetDataState = MutableStateFlow<List<OnBoardingDataClass>>(emptyList())
+    val bottomSheetDataState: StateFlow<List<OnBoardingDataClass>> = _bottomSheetDataState.asStateFlow()
+
 
     private val _bitmaps = MutableStateFlow<List<Bitmap>>(emptyList())
     val bitmaps = _bitmaps.asStateFlow()
@@ -61,6 +66,19 @@ class HomeViewModel @Inject constructor(
             is BodyPartsScreenEvent.GetUpperBody -> getBodyParts(BodyType.UpperBody)
             is BodyPartsScreenEvent.GetLowerBody -> getBodyParts(BodyType.LowerBody)
             else -> getBodyParts()  // Fetch the complete list without filtering
+        }
+    }
+
+    fun handleBottomSheetEvent(event: BottomSheetOnBoardingScreenEvent) {
+        when (event) {
+            is BottomSheetOnBoardingScreenEvent.GetScanLesionOItems -> getBottomSheetScanLesionData()
+            else -> {}
+        }
+    }
+
+    private fun getBottomSheetScanLesionData() {
+        viewModelScope.launch {
+            _bottomSheetDataState.value = skinAppRepository.getBottomSheetForScanLesion()
         }
     }
 

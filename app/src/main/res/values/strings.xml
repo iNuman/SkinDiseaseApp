@@ -64,4 +64,5 @@
     <string name="_1x">1x</string>
     <string name="_2x">2x</string>
     <string name="profile_image">Profile Image</string>
+    <string name="retake_photo">Retake Photo</string>
 </resources>

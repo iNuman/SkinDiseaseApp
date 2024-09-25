@@ -80,6 +80,7 @@ import com.example.skindiseaseapp.ui.screens.common.CommonText
 import com.example.skindiseaseapp.ui.screens.common.CommonTopAppBar
 import com.example.skindiseaseapp.ui.screens.common_view_model.HomeViewModel
 import com.example.skindiseaseapp.ui.screens.home.events.BodyPartsScreenEvent
+import com.example.skindiseaseapp.ui.screens.home.events.BottomSheetOnBoardingScreenEvent
 import com.example.skindiseaseapp.ui.theme.Background
 import com.example.skindiseaseapp.ui.theme.OutlineLight
 import com.example.skindiseaseapp.ui.theme.bold
