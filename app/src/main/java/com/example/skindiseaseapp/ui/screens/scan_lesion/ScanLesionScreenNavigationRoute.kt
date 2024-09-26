@@ -22,6 +22,7 @@ fun NavController.navigateToScanLesionScreen(
 @OptIn(ExperimentalSharedTransitionApi::class)
 fun NavGraphBuilder.scanLesionScreen(
     navigateBack: () -> Unit,
+    onClickUsePhoto: () -> Unit,
 ) {
     composable<ScanLesionScreenNavigationRoute> {
         val viewModel: HomeViewModel = hiltViewModel()
@@ -29,7 +30,10 @@ fun NavGraphBuilder.scanLesionScreen(
             viewModel = viewModel,
             navigateBack = {
                 navigateBack.invoke()
-            }
+            },
+            onClickUsePhoto = {
+                onClickUsePhoto.invoke()
+            },
         )
     }
 }

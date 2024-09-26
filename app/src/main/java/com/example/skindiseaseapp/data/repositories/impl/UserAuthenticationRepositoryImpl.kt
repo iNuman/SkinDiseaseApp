@@ -14,8 +14,6 @@ import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
-import com.oguzdogdu.walliescompose.data.di.Dispatcher
-import com.oguzdogdu.walliescompose.data.di.SkinAppDispatchers
 import com.oguzdogdu.walliescompose.data.repository.IUserAuthenticationRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow

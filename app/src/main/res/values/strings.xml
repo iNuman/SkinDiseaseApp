@@ -65,4 +65,6 @@
     <string name="_2x">2x</string>
     <string name="profile_image">Profile Image</string>
     <string name="retake_photo">Retake Photo</string>
+    <string name="scan_image">Use Photo</string>
+    <string name="perform_prediction">Perform Prediction</string>
 </resources>

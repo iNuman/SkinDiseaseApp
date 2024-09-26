@@ -31,18 +31,23 @@ fun CommonText(
     interactionSource: MutableInteractionSource? = null,
     onClick: (() -> Unit)? = null,
 ) {
+    val clickableModifier = if (enableOnClick) {
+        Modifier.clickable(
+            enabled = enableOnClick,
+            indication = null,
+            interactionSource = remember { MutableInteractionSource() }
+        ) {
+            onClick?.invoke()
+        }
+    } else {
+        Modifier
+    }
+
     Text(
-        modifier = modifier
-            .clickable(
-                enabled = rememberSaveable {  enableOnClick }, // avoid multiple clicks used rememberSaveable
-                indication = null,
-                interactionSource = remember { MutableInteractionSource() }
-            ) {
-                onClick?.invoke()
-            },
+        modifier = modifier.then(clickableModifier),
         text = text ?: "",
         fontSize = textSize ?: 12.ssp,
-        fontFamily = fontFamily?: medium,
+        fontFamily = fontFamily ?: medium,
         color = textColor ?: PrimaryContainerDark,
         fontWeight = fontWeight ?: FontWeight.Normal,
         textAlign = textAlign ?: TextAlign.Start

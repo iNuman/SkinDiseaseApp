@@ -4,8 +4,12 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Matrix
+import android.net.Uri
 import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.ImageCapture.OnImageCapturedCallback
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
@@ -37,12 +41,12 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -52,6 +56,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.Black
 import androidx.compose.ui.graphics.Color.Companion.Green
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -61,6 +66,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -68,6 +74,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.rememberAsyncImagePainter
 import com.example.skindiseaseapp.R
+import com.example.skindiseaseapp.core.utils.helper.common.Constants.MIN_SIZE_OF_CROPPED_IMAGE_OVERLAY
 import com.example.skindiseaseapp.ui.permission.RequestCameraPermission
 import com.example.skindiseaseapp.ui.screens.bottom_sheet.CommonBottomSheet
 import com.example.skindiseaseapp.ui.screens.common.CameraCaptureButton
@@ -95,14 +102,18 @@ fun ScanLesionScreenRoute(
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel,
     navigateBack: () -> Unit,
+    onClickUsePhoto: () -> Unit,
 ) {
 
     val context = LocalContext.current
     val activity = LocalContext.current as? Activity
 
-    val scanLesionOnBoardingList by viewModel.bottomSheetDataState.collectAsStateWithLifecycle()
+    CameraPermissionHandling()
 
-    val permissionState = rememberPermissionState(Manifest.permission.CAMERA)
+    val scanLesionOnBoardingList by viewModel.bottomSheetDataState.collectAsStateWithLifecycle()
+    val bitmaps by viewModel.bitmaps.collectAsStateWithLifecycle()
+    val navigateAfterGettingBitmap by viewModel.navigateToNextScreen.collectAsStateWithLifecycle()
+//    val croppedBitmap by viewModel.croppedBitmap.collectAsStateWithLifecycle()
 
     val scope = rememberCoroutineScope()
 
@@ -116,6 +127,15 @@ fun ScanLesionScreenRoute(
         }
     }
 
+    LaunchedEffect(navigateAfterGettingBitmap) {
+        when (navigateAfterGettingBitmap) {
+            true -> {
+                Log.d("ffnet", "ScanLesionScreenRoute: $navigateAfterGettingBitmap")
+                onClickUsePhoto.invoke()
+            }
+            else -> return@LaunchedEffect
+        }
+    }
 
     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -123,137 +143,70 @@ fun ScanLesionScreenRoute(
         viewModel.handleBottomSheetEvent(BottomSheetOnBoardingScreenEvent.GetScanLesionOItems)
     }
 
-    val bitmaps by viewModel.bitmaps.collectAsState()
 
-    if (!permissionState.status.isGranted) {
-        RequestCameraPermission(
-            onPermissionGranted = {
-                // Show permission granted message
-//                Toast.makeText(context, "Permission granted", Toast.LENGTH_SHORT).show()
-            },
-            onPermissionDenied = {
-                // Handle denial scenario
-//                Toast.makeText(context, "Permission denied", Toast.LENGTH_SHORT).show()
-            }
-        )
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            val bitmap = BitmapFactory.decodeStream(
+                context.contentResolver.openInputStream(it)
+            )
+            viewModel.onTakePhoto(bitmap = bitmap)
+        }
     }
 
-    Scaffold(modifier = modifier.fillMaxSize()
+    Scaffold(
+        modifier = modifier.fillMaxSize()
     ) { padding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
         ) {
+            // Bottom sheet
             CommonBottomSheet(
                 list = scanLesionOnBoardingList,
                 modifier = Modifier.fillMaxWidth()
             )
 
+            // Camera Preview setup
             CameraPreview(
                 controller = controller!!,
                 modifier = Modifier
                     .fillMaxSize()
             )
 
+            // Image Cropper
             ImageCropper(
                 bitmap = bitmaps.lastOrNull(),
-                onZoom1x = {},
+                onZoom1x = {
+
+//                    controller.setZoomRatio(controller.cameraInfo?.zoomState?.value?.minZoomRatio)
+//                    CameraInfo.getZoomState().getValue().getMinZoomRatio()
+                },
                 onZoom2x = {},
                 onRetakePhoto1 = {},
-                onRetakePhoto2 = {})
+                onClickUsePhoto = { croppedBitmap ->
+                    viewModel.setCroppedBitmap(croppedBitmap)
+                })
 
-            Column {
-                ElevatedButton(
-                    modifier = Modifier
-                        .wrapContentWidth()
-                        .align(Alignment.CenterHorizontally)
-                        .padding(all = 12.sdp),
-                    shape = RoundedCornerShape(32.sdp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Green,
-                        contentColor = Color.White
-                    ),
-                    onClick = { },
-                ) {
+            // Camera Close and Flash buttons
+            CloseAndFlashComponents(navigateBack = {
+                navigateBack.invoke()
+            }, onClickFlash = {
 
-                    CommonText(
-                        modifier = Modifier.padding(3.sdp),
-                        text = stringResource(R.string.instructions),
-                        textSize = 12.ssp,
-                        fontFamily = medium,
-                        fontWeight = FontWeight.Medium,
-                        textAlign = TextAlign.Center,
-                        textColor = White,
-                    )
-                }
+            })
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 12.sdp, start = 12.sdp, end = 12.sdp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Top
-                ) {
-                    CommonFloatingButtonSmall(
-                        image = Icons.Filled.Close,
-                        contentColor = Black,
-                        backgroundColor = White,
-                        shape = CircleShape,
-                        onClick = {
-                            navigateBack.invoke()
-                        }
-                    )
-                    CommonFloatingButtonSmall(
-                        image = Icons.Filled.Refresh,
-                        contentColor = Black,
-                        backgroundColor = White,
-                        shape = CircleShape,
-                        onClick = {
-//                            if (hasFlash) {
-//                                isTorchOn = !isTorchOn
-//                                cameraControl.enableTorch(isTorchOn)
-//                            }
-                        }
-                    )
-                }
-            }
-
-            Row(
-                modifier = Modifier
-                    .wrapContentWidth()
-                    .align(Alignment.BottomStart)
-                    .padding(bottom = 12.sdp, start = 12.sdp, end = 12.sdp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-
-                Spacer(Modifier.size(8.sdp))
-
-                CommonFloatingButtonSmall(
-                    image = Icons.Default.DateRange, // gallery
-                    contentColor = Black,
-                    backgroundColor = Green,
-                    shape = CircleShape,
-                    onClick = {
+            // Camera Gallery and Capture buttons
+            if (bitmaps.isEmpty()) {
+                CameraControls(
+                    modifier = Modifier.align(alignment = Alignment.BottomStart),
+                    onGalleryClick = {
                         scope.launch {
+                            galleryLauncher.launch("image/*")
                         }
                     },
-                )
-                Spacer(Modifier.size(60.sdp))
-                CameraCaptureButton(
-                    modifier = Modifier
-                        .size(64.sdp)
-                        .clip(RoundedCornerShape(50.sdp))
-                        .border(
-                            1.sdp,
-                            Color.White,
-                            shape = RoundedCornerShape(50.sdp)
-                        ),
-                    contentColor = Black,
-                    backgroundColor = Green,
-                    shape = CircleShape,
-                    onClick = {
+                    onCaptureClick = {
                         takePhoto(
                             activity = activity,
                             controller = controller,
@@ -262,6 +215,103 @@ fun ScanLesionScreenRoute(
                     }
                 )
             }
+        }
+    }
+}
+
+@Composable
+fun CameraControls(
+    modifier: Modifier = Modifier,
+    onGalleryClick: () -> Unit,
+    onCaptureClick: () -> Unit,
+) {
+    Row(
+        modifier = modifier
+            .wrapContentWidth()
+            .padding(bottom = 24.sdp, start = 12.sdp, end = 12.sdp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+
+        Spacer(Modifier.size(8.sdp))
+
+        CommonFloatingButtonSmall(
+            image = Icons.Default.DateRange,
+            contentColor = Black,
+            backgroundColor = Green,
+            shape = CircleShape,
+            onClick = onGalleryClick
+        )
+        Spacer(Modifier.size(60.sdp))
+        CameraCaptureButton(
+            modifier = Modifier
+                .size(64.sdp)
+                .clip(RoundedCornerShape(50.sdp))
+                .border(
+                    1.sdp,
+                    Color.White,
+                    shape = RoundedCornerShape(50.sdp)
+                ),
+            contentColor = Black,
+            backgroundColor = Green,
+            shape = CircleShape,
+            onClick = onCaptureClick
+        )
+    }
+}
+
+@Composable
+fun CloseAndFlashComponents(navigateBack: () -> Unit, onClickFlash: () -> Unit) {
+    Column {
+        ElevatedButton(
+            modifier = Modifier
+                .wrapContentWidth()
+                .align(Alignment.CenterHorizontally)
+                .padding(all = 12.sdp),
+            shape = RoundedCornerShape(32.sdp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color.Green,
+                contentColor = Color.White
+            ),
+            onClick = { },
+        ) {
+
+            CommonText(
+                modifier = Modifier.padding(3.sdp),
+                text = stringResource(R.string.instructions),
+                textSize = 12.ssp,
+                fontFamily = medium,
+                fontWeight = FontWeight.Medium,
+                textAlign = TextAlign.Center,
+                textColor = White,
+            )
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 12.sdp, start = 12.sdp, end = 12.sdp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Top
+        ) {
+            CommonFloatingButtonSmall(
+                image = Icons.Filled.Close,
+                contentColor = Black,
+                backgroundColor = White,
+                shape = CircleShape,
+                onClick = {
+                    navigateBack.invoke()
+                }
+            )
+            CommonFloatingButtonSmall(
+                image = Icons.Filled.Refresh,
+                contentColor = Black,
+                backgroundColor = White,
+                shape = CircleShape,
+                onClick = {
+                    onClickFlash.invoke()
+                }
+            )
         }
     }
 }
@@ -309,10 +359,10 @@ fun ImageCropper(
     onZoom1x: () -> Unit = {},
     onZoom2x: () -> Unit = {},
     onRetakePhoto1: () -> Unit = {},
-    onRetakePhoto2: () -> Unit = {}
+    onClickUsePhoto: (ImageBitmap) -> Unit = {},
 ) {
     BoxWithConstraints {
-        val minSize = 550f
+        val minSize = MIN_SIZE_OF_CROPPED_IMAGE_OVERLAY
         var overlayWidth by remember { mutableFloatStateOf(minSize) }
         var overlayHeight by remember { mutableFloatStateOf(minSize) }
 
@@ -368,12 +418,12 @@ fun ImageCropper(
                 croppedImageBitmap?.let {
                     Image(
                         modifier = Modifier
-                            .offset(y = 31.sdp),
+                            .offset(y = 31.sdp)
+                            .padding(bottom = 7.sdp),
                         contentScale = ContentScale.Crop,
                         bitmap = it,
                         contentDescription = stringResource(R.string.image_for_cropping)
                     )
-                    Spacer(modifier = Modifier.size(12.sdp))
                 }
             }
 
@@ -383,7 +433,7 @@ fun ImageCropper(
             Row(
                 modifier = Modifier
                     .wrapContentWidth()
-                    .padding(bottom = 12.sdp, start = 12.sdp, end = 12.sdp),
+                    .padding(bottom = 4.sdp, start = 8.sdp, end = 8.sdp),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -400,6 +450,7 @@ fun ImageCropper(
                         fontFamily = medium,
                         textColor = Black,
                         textSize = 12.ssp,
+                        enableOnClick = false
                     )
                 }
                 Spacer(modifier = Modifier.size(18.sdp))
@@ -416,18 +467,20 @@ fun ImageCropper(
                         fontFamily = medium,
                         textColor = Black,
                         textSize = 12.ssp,
+                        enableOnClick = false
                     )
                 }
             }
         }
 
-        // Retake photo buttons
+        // Retake or use photo buttons
         if (croppedImageBitmap != null) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .align(Alignment.BottomCenter)
-                    .padding(bottom = 12.sdp, start = 12.sdp, end = 12.sdp),
+                    .offset(y = (-31).sdp)
+                    .padding(start = 12.sdp, end = 12.sdp),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.Bottom
             ) {
@@ -444,11 +497,12 @@ fun ImageCropper(
                         fontFamily = medium,
                         textColor = Black,
                         textSize = 12.ssp,
+                        enableOnClick = false
                     )
                 }
                 Spacer(modifier = Modifier.size(18.sdp))
                 ElevatedButton(
-                    onClick = { onRetakePhoto2() }, // Separate lambda for second Retake button
+                    onClick = { onClickUsePhoto.invoke(croppedImageBitmap) },
                     shape = RoundedCornerShape(32.sdp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = White,
@@ -456,10 +510,11 @@ fun ImageCropper(
                     )
                 ) {
                     CommonText(
-                        text = stringResource(R.string.retake_photo),
+                        text = stringResource(R.string.scan_image),
                         fontFamily = medium,
                         textColor = Black,
                         textSize = 12.ssp,
+                        enableOnClick = false
                     )
                 }
             }
@@ -473,7 +528,7 @@ fun extractImageForOverlay(
     overlayHeight: Float,
     imageWidth: Float,
     imageHeight: Float,
-    targetSize: Float = 550f // Fixed overlay size: 550x550
+    targetSize: Float = 550f, // Fixed overlay size: 550x550
 ): Bitmap? {
     if (bitmap == null) return null
 
@@ -512,4 +567,23 @@ fun extractImageForOverlay(
         targetSize.toInt(),   // Height: 550
         true                  // Apply filtering for smooth resizing
     )
+}
+
+@OptIn(ExperimentalPermissionsApi::class)
+@Composable
+private fun CameraPermissionHandling() {
+    val permissionState = rememberPermissionState(Manifest.permission.CAMERA)
+
+    if (!permissionState.status.isGranted) {
+        RequestCameraPermission(
+            onPermissionGranted = {
+                // Show permission granted message
+//                Toast.makeText(context, "Permission granted", Toast.LENGTH_SHORT).show()
+            },
+            onPermissionDenied = {
+                // Handle denial scenarxio
+//                Toast.makeText(context, "Permission denied", Toast.LENGTH_SHORT).show()
+            }
+        )
+    }
 }

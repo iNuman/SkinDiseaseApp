@@ -6,6 +6,8 @@ import android.graphics.Bitmap
 import androidx.compose.material3.DatePickerState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.TimePickerState
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.skindiseaseapp.SkinApp
@@ -24,8 +26,10 @@ import com.example.skindiseaseapp.ui.screens.home.events.BottomSheetOnBoardingSc
 import com.example.skindiseaseapp.ui.screens.schedules.SchedulesScreenState
 import com.oguzdogdu.walliescompose.features.settings.SchedulesScreenEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.updateAndGet
@@ -57,6 +61,12 @@ class HomeViewModel @Inject constructor(
 
     private val _bitmaps = MutableStateFlow<List<Bitmap>>(emptyList())
     val bitmaps = _bitmaps.asStateFlow()
+
+    private val _croppedBitmap = MutableStateFlow<Bitmap?>(null)
+    val croppedBitmap = _croppedBitmap.asStateFlow()
+
+    private val _navigateToNextScreen = MutableStateFlow<Boolean>(false)
+    val navigateToNextScreen = _navigateToNextScreen.asStateFlow()
 
 
 
@@ -125,6 +135,13 @@ class HomeViewModel @Inject constructor(
 
             is SchedulesScreenEvent.ClearCached -> statusClearCache(event.isCleared)
             is SchedulesScreenEvent.ProfileIconInHomeClicked -> statusClearCache(event.isProfileIconInHomeClicked)
+        }
+    }
+
+    fun setCroppedBitmap(croppedBitmap: ImageBitmap) = viewModelScope.launch {
+        _croppedBitmap.value = croppedBitmap.asAndroidBitmap()
+        if (_croppedBitmap.value != null) {
+            _navigateToNextScreen.value = true
         }
     }
 

@@ -3,14 +3,14 @@ package com.example.skindiseaseapp.di
 import android.content.Context
 import androidx.room.Room
 import com.example.skindiseaseapp.core.utils.helper.common.Constants.SKIN_APP_DATABASE
-import com.example.skindiseaseapp.data.local.dao.NotificationsDao
+import com.example.skindiseaseapp.data.di.Dispatcher
+import com.example.skindiseaseapp.data.di.SkinAppDispatchers
 import com.example.skindiseaseapp.data.local.SkinDiseaseAppDatabase
+import com.example.skindiseaseapp.data.local.dao.NotificationsDao
 import com.example.skindiseaseapp.data.repositories.INotificationsRepository
 import com.example.skindiseaseapp.data.repositories.ISkinAppRepository
 import com.example.skindiseaseapp.data.repositories.impl.NotificationRepositoryImpl
 import com.example.skindiseaseapp.data.repository.SkinAppRepositoryImpl
-import com.oguzdogdu.walliescompose.data.di.Dispatcher
-import com.oguzdogdu.walliescompose.data.di.SkinAppDispatchers
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

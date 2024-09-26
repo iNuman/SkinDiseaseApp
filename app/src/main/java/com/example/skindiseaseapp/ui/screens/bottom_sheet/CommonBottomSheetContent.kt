@@ -2,41 +2,39 @@ package com.example.skindiseaseapp.ui.screens.bottom_sheet
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.LocalOverscrollConfiguration
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -46,6 +44,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.Black
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -57,11 +56,9 @@ import com.example.skindiseaseapp.domain.model.bottom_sheet.OnBoardingDataClass
 import com.example.skindiseaseapp.navigation.utils.SkinDiseaseAppIcons
 import com.example.skindiseaseapp.ui.screens.common.CommonText
 import com.example.skindiseaseapp.ui.theme.BackgroundLight
-import com.example.skindiseaseapp.ui.theme.OnErrorContainerLight
 import com.example.skindiseaseapp.ui.theme.White
 import com.example.skindiseaseapp.ui.theme.regular
-import com.example.skindiseaseapp.ui.theme.ripple
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import network.chaintech.sdpcomposemultiplatform.sdp
 import network.chaintech.sdpcomposemultiplatform.ssp
 import kotlin.math.absoluteValue
@@ -69,11 +66,12 @@ import kotlin.ranges.coerceIn
 import kotlin.to
 
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun CommonBottomSheet(modifier: Modifier = Modifier, list: List<OnBoardingDataClass>) {
     var showBottomSheet by remember { mutableStateOf(true) }
     val sheetState = rememberModalBottomSheetState(showBottomSheet)
+    val pagerState = rememberPagerState(pageCount = { Int.MAX_VALUE })
 
     if (showBottomSheet) {
         ModalBottomSheet(
@@ -87,41 +85,46 @@ fun CommonBottomSheet(modifier: Modifier = Modifier, list: List<OnBoardingDataCl
             },
             sheetState = sheetState
         ) {
-
-            CommonBottomSheetContent(list = list, modifier = modifier)
+//            CompositionLocalProvider(LocalOverscrollConfiguration provides null) {
+                HorizontalPagerWithIndicators(list = list, pagerState)
+//            }
         }
     }
+
 }
 
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun CommonBottomSheetContent(
-    list: List<OnBoardingDataClass>,
-    modifier: Modifier = Modifier,
-) {
-    HorizontalPagerWithIndicators(list)
-}
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun HorizontalPagerWithIndicators(list: List<OnBoardingDataClass>) {
-    val pagerState = rememberPagerState(pageCount = { list.size })
+fun HorizontalPagerWithIndicators(list: List<OnBoardingDataClass>, pagerState: PagerState) {
+    if (list.isEmpty()) return
+
+    var autoScroll by remember { mutableStateOf(true) }
+    val scrollAmount = with(LocalDensity.current) {
+        pagerState.layoutInfo.pageSize.toFloat()
+    }
+    // Automatic sliding effect with smoother scrolling
+    LaunchedEffect(key1 = autoScroll, block = {
+        while (autoScroll) {
+            delay(1000L)  // 1-second delay
+            pagerState.animateScrollBy(scrollAmount)  // Smooth scrolling by pixel amount
+        }
+    })
 
     Column {
-
+        // Pager
         HorizontalPager(
             state = pagerState,
-            contentPadding = PaddingValues(horizontal = 2.sdp), pageSpacing = 2.sdp
-        ) { page ->
-            DisplayOnBoardingItem(onBoardingItem = list[page])
-            LaunchedEffect(pagerState) {
-                snapshotFlow { pagerState.currentPage }
-                    .collect { currentPage ->
-                        pagerState.animateScrollToPage(currentPage)
-                    }
+            contentPadding = PaddingValues(horizontal = 2.sdp),
+            pageSpacing = 2.sdp
+        ) { index ->
+            list.getOrNull(index % list.size)?.let { item ->
+                DisplayOnBoardingItem(onBoardingItem = item)
             }
         }
+
+        // Indicator
         Box(
             modifier = Modifier
                 .align(Alignment.CenterHorizontally)
@@ -135,7 +138,14 @@ fun HorizontalPagerWithIndicators(list: List<OnBoardingDataClass>) {
             )
         }
     }
+
+    // Start scrolling from the first page
+    LaunchedEffect(key1 = Unit, block = {
+        pagerState.scrollToPage(0)  // Scroll to the first page at the start
+    })
 }
+
+
 
 @Composable
 fun DisplayOnBoardingItem(onBoardingItem: OnBoardingDataClass) {

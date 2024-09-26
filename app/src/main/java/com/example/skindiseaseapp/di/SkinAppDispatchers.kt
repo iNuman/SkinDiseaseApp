@@ -1,4 +1,4 @@
-package com.oguzdogdu.walliescompose.data.di
+package com.example.skindiseaseapp.data.di
 
 import javax.inject.Qualifier
 import kotlin.annotation.AnnotationRetention.RUNTIME

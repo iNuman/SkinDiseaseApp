@@ -1,6 +1,9 @@
 package com.example.skindiseaseapp.core.utils.helper.common
 
 object Constants {
+
+    const val MIN_SIZE_OF_CROPPED_IMAGE_OVERLAY = 550f
+
     const val ID = "id"
     const val EMAIL = "email"
     const val NAME = "name"

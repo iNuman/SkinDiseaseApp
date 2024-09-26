@@ -19,9 +19,12 @@ import com.example.skindiseaseapp.navigation.utils.Routes
 import com.example.skindiseaseapp.ui.screens.appstate.MainAppState
 import com.example.skindiseaseapp.ui.screens.home.HomeScreenNavigationRoute
 import com.example.skindiseaseapp.ui.screens.home.homeScreen
+import com.example.skindiseaseapp.ui.screens.home.navigateToPerformPredictionScreen
+import com.example.skindiseaseapp.ui.screens.home.performPredictionScreen
 import com.example.skindiseaseapp.ui.screens.login.LoginScreenNavigationRoute
 import com.example.skindiseaseapp.ui.screens.login.googlesignin.GoogleAuthUiClient
 import com.example.skindiseaseapp.ui.screens.login.loginScreen
+import com.example.skindiseaseapp.ui.screens.scan_lesion.ScanLesionScreenNavigationRoute
 import com.example.skindiseaseapp.ui.screens.scan_lesion.navigateToScanLesionScreen
 import com.example.skindiseaseapp.ui.screens.scan_lesion.scanLesionScreen
 import com.example.skindiseaseapp.ui.screens.schedules.CreateSchedulesScreenNavigationRoute
@@ -130,14 +133,32 @@ fun SkinDiseaseAppNavHost(
 //                        navController.navigateUp()
                     }
                 )
-                scanLesionScreen(navigateBack = {
+                scanLesionScreen(
+                    navigateBack = {
 //                    navController.navigate(SchedulesScreenNavigationRoute) {
 //                        popUpTo(HomeScreenNavigationRoute) {
 //                            inclusive = false
 //                        }
 //                    }
-                    navController.navigateUp()
-                })
+                        navController.navigateUp()
+                    },
+                    onClickUsePhoto = {
+                        navController.navigateToPerformPredictionScreen()
+                    },
+                )
+
+                performPredictionScreen(
+                    navController = navController,
+                    navigateBack = {
+                        navController.navigate(HomeScreenNavigationRoute) {
+                            popUpTo(ScanLesionScreenNavigationRoute) {
+                                inclusive = false
+                            }
+                        }
+                    },
+                    onClickScanALesion = {
+                    }
+                )
 
                 skinCheckScreen(
                     onBodyPartItemClicked = { bodyPart ->
