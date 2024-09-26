@@ -2,8 +2,11 @@ package com.example.skindiseaseapp.ui.screens.activity
 
 import android.os.Build
 import android.os.Bundle
+import android.view.WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+import android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -27,6 +30,8 @@ import com.example.skindiseaseapp.core.utils.helper.NetworkMonitor
 import com.example.skindiseaseapp.ui.screens.appstate.SkinDiseaseApp
 import dagger.hilt.android.AndroidEntryPoint
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.example.skindiseaseapp.ui.permission.CheckExactAlarmPermission
 import com.example.skindiseaseapp.ui.permission.RequestNotificationPermission
 import com.example.skindiseaseapp.ui.screens.splash.SplashViewModel
@@ -43,7 +48,7 @@ class MainActivity : ComponentActivity() {
 
     private val viewModel: MainViewModel by viewModels()
     private val splashViewModel: SplashViewModel by viewModels()
-    
+
 
     private val googleAuthUiClient by lazy {
         GoogleAuthUiClient(
@@ -53,8 +58,9 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
 //        enableEdgeToEdge()
+        super.onCreate(savedInstanceState)
+
         installSplashScreen().apply {
             setKeepOnScreenCondition {
                 !splashViewModel.isReady.value
@@ -79,7 +85,8 @@ class MainActivity : ComponentActivity() {
             CompositionLocalProvider(localApplication provides application) {
                 SkinDiseaseAppTheme(appTheme = application.theme.value) {
                     Surface(
-                        modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.background
                     ) {
                         SkinDiseaseApp(
                             isAuthenticated = mainState.userAuth,

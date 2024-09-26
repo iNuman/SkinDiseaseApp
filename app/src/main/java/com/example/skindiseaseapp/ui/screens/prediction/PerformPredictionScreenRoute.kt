@@ -129,7 +129,7 @@ fun PerformPredictionScreenRoute(
     * collection when the lifecycle is started. This ensures that the flow only emits values when the composable is
     * active and visible, preventing unnecessary work and potential issues.
     * */
-    val bitmap by viewModel.croppedBitmap.collectAsStateWithLifecycle()
+    val bitmap by viewModel.bitmap.collectAsStateWithLifecycle()
 //    val bitmaps by viewModel.bitmaps.collectAsState()
 
 //    val lifecycleOwner = LocalLifecycleOwner.current

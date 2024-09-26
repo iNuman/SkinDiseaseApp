@@ -17,7 +17,6 @@ import com.example.skindiseaseapp.data.repositories.ISkinAppRepository
 import com.example.skindiseaseapp.domain.model.body.BodyParts
 import com.example.skindiseaseapp.domain.model.body.BodyType
 import com.example.skindiseaseapp.domain.model.bottom_sheet.OnBoardingDataClass
-import com.example.skindiseaseapp.domain.wrapper.Resource
 import com.example.skindiseaseapp.domain.wrapper.onFailure
 import com.example.skindiseaseapp.domain.wrapper.onLoading
 import com.example.skindiseaseapp.domain.wrapper.onSuccess
@@ -26,10 +25,8 @@ import com.example.skindiseaseapp.ui.screens.home.events.BottomSheetOnBoardingSc
 import com.example.skindiseaseapp.ui.screens.schedules.SchedulesScreenState
 import com.oguzdogdu.walliescompose.features.settings.SchedulesScreenEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.updateAndGet
@@ -58,15 +55,15 @@ class HomeViewModel @Inject constructor(
     private val _bottomSheetDataState = MutableStateFlow<List<OnBoardingDataClass>>(emptyList())
     val bottomSheetDataState: StateFlow<List<OnBoardingDataClass>> = _bottomSheetDataState.asStateFlow()
 
+    private val _bitmap = MutableStateFlow<Bitmap?>(null)
+    val bitmap = _bitmap.asStateFlow()
 
-    private val _bitmaps = MutableStateFlow<List<Bitmap>>(emptyList())
-    val bitmaps = _bitmaps.asStateFlow()
+    private val _navigateToNextOnUsePhotoButtonClick = MutableStateFlow<Boolean>(false)
+    val navigateToNextOnUsePhotoButtonClick = _navigateToNextOnUsePhotoButtonClick.asStateFlow()
 
-    private val _croppedBitmap = MutableStateFlow<Bitmap?>(null)
-    val croppedBitmap = _croppedBitmap.asStateFlow()
 
-    private val _navigateToNextScreen = MutableStateFlow<Boolean>(false)
-    val navigateToNextScreen = _navigateToNextScreen.asStateFlow()
+    private val _fromGallery = MutableStateFlow<Boolean>(false)
+    val fromGallery = _fromGallery.asStateFlow()
 
 
 
@@ -118,7 +115,7 @@ class HomeViewModel @Inject constructor(
     }
 
     fun onTakePhoto(bitmap: Bitmap) {
-        _bitmaps.value += bitmap
+        _bitmap.value = bitmap
     }
 
 
@@ -139,10 +136,15 @@ class HomeViewModel @Inject constructor(
     }
 
     fun setCroppedBitmap(croppedBitmap: ImageBitmap) = viewModelScope.launch {
-        _croppedBitmap.value = croppedBitmap.asAndroidBitmap()
-        if (_croppedBitmap.value != null) {
-            _navigateToNextScreen.value = true
-        }
+        _bitmap.value = croppedBitmap.asAndroidBitmap()
+    }
+
+    fun navigateToNextScreen(){
+        _navigateToNextOnUsePhotoButtonClick.value = _bitmap.value != null
+    }
+
+    fun fromGallery(fromGallery: Boolean = false){
+        _fromGallery.value = fromGallery
     }
 
 

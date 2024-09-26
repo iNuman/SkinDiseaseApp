@@ -41,22 +41,25 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ExperimentalComposeApi
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.Black
 import androidx.compose.ui.graphics.Color.Companion.Green
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -75,6 +78,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.rememberAsyncImagePainter
 import com.example.skindiseaseapp.R
 import com.example.skindiseaseapp.core.utils.helper.common.Constants.MIN_SIZE_OF_CROPPED_IMAGE_OVERLAY
+import com.example.skindiseaseapp.navigation.utils.SkinDiseaseAppIcons
 import com.example.skindiseaseapp.ui.permission.RequestCameraPermission
 import com.example.skindiseaseapp.ui.screens.bottom_sheet.CommonBottomSheet
 import com.example.skindiseaseapp.ui.screens.common.CameraCaptureButton
@@ -82,6 +86,8 @@ import com.example.skindiseaseapp.ui.screens.common.CommonFloatingButtonSmall
 import com.example.skindiseaseapp.ui.screens.common.CommonText
 import com.example.skindiseaseapp.ui.screens.common_view_model.HomeViewModel
 import com.example.skindiseaseapp.ui.screens.home.events.BottomSheetOnBoardingScreenEvent
+import com.example.skindiseaseapp.ui.screens.scan_lesion.zoom.ZoomData
+import com.example.skindiseaseapp.ui.screens.scan_lesion.zoom.ZoomableImage
 import com.example.skindiseaseapp.ui.theme.White
 import com.example.skindiseaseapp.ui.theme.medium
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
@@ -111,8 +117,9 @@ fun ScanLesionScreenRoute(
     CameraPermissionHandling()
 
     val scanLesionOnBoardingList by viewModel.bottomSheetDataState.collectAsStateWithLifecycle()
-    val bitmaps by viewModel.bitmaps.collectAsStateWithLifecycle()
-    val navigateAfterGettingBitmap by viewModel.navigateToNextScreen.collectAsStateWithLifecycle()
+    val bitmap by viewModel.bitmap.collectAsStateWithLifecycle()
+    val isImageFromGallery by viewModel.fromGallery.collectAsStateWithLifecycle()
+    val navigateAfterGettingBitmap by viewModel.navigateToNextOnUsePhotoButtonClick.collectAsStateWithLifecycle()
 //    val croppedBitmap by viewModel.croppedBitmap.collectAsStateWithLifecycle()
 
     val scope = rememberCoroutineScope()
@@ -130,9 +137,9 @@ fun ScanLesionScreenRoute(
     LaunchedEffect(navigateAfterGettingBitmap) {
         when (navigateAfterGettingBitmap) {
             true -> {
-                Log.d("ffnet", "ScanLesionScreenRoute: $navigateAfterGettingBitmap")
                 onClickUsePhoto.invoke()
             }
+
             else -> return@LaunchedEffect
         }
     }
@@ -151,7 +158,8 @@ fun ScanLesionScreenRoute(
             val bitmap = BitmapFactory.decodeStream(
                 context.contentResolver.openInputStream(it)
             )
-            viewModel.onTakePhoto(bitmap = bitmap)
+            viewModel.fromGallery(fromGallery = true)
+            viewModel.setCroppedBitmap(croppedBitmap = bitmap.asImageBitmap())
         }
     }
 
@@ -176,46 +184,62 @@ fun ScanLesionScreenRoute(
                     .fillMaxSize()
             )
 
-            // Image Cropper
-            ImageCropper(
-                bitmap = bitmaps.lastOrNull(),
-                onZoom1x = {
+
+            // Gallery Image Cropper
+            if (isImageFromGallery) {
+                GalleryImageCropper(
+                    bitmap = bitmap,
+                    onClickCancel = {},
+                    onClickUsePhoto = { croppedBitmap ->
+                        viewModel.setCroppedBitmap(croppedBitmap)
+                        viewModel.navigateToNextScreen()
+                    })
+
+
+            } else {
+                // Camera Image Cropper
+                ImageCropperCamera(
+                    bitmap = bitmap,
+                    onZoom1x = {
 
 //                    controller.setZoomRatio(controller.cameraInfo?.zoomState?.value?.minZoomRatio)
 //                    CameraInfo.getZoomState().getValue().getMinZoomRatio()
-                },
-                onZoom2x = {},
-                onRetakePhoto1 = {},
-                onClickUsePhoto = { croppedBitmap ->
-                    viewModel.setCroppedBitmap(croppedBitmap)
-                })
-
-            // Camera Close and Flash buttons
-            CloseAndFlashComponents(navigateBack = {
-                navigateBack.invoke()
-            }, onClickFlash = {
-
-            })
-
-            // Camera Gallery and Capture buttons
-            if (bitmaps.isEmpty()) {
-                CameraControls(
-                    modifier = Modifier.align(alignment = Alignment.BottomStart),
-                    onGalleryClick = {
-                        scope.launch {
-                            galleryLauncher.launch("image/*")
-                        }
                     },
-                    onCaptureClick = {
-                        takePhoto(
-                            activity = activity,
-                            controller = controller,
-                            onPhotoTaken = viewModel::onTakePhoto
-                        )
-                    }
-                )
+                    onZoom2x = {},
+                    onRetakePhoto1 = {},
+                    onClickUsePhoto = { croppedBitmap ->
+                        viewModel.setCroppedBitmap(croppedBitmap)
+                        viewModel.navigateToNextScreen()
+                    })
+                // Camera Close and Flash buttons
+                CloseAndFlashComponents(navigateBack = {
+                    navigateBack.invoke()
+                }, onClickFlash = {
+
+                })
+                // Camera Gallery and Capture buttons
+                if (bitmap == null) {
+                    CameraControls(
+                        modifier = Modifier.align(alignment = Alignment.BottomStart),
+                        onGalleryClick = {
+                            scope.launch {
+                                galleryLauncher.launch("image/*")
+                            }
+                        },
+                        onCaptureClick = {
+                            viewModel.fromGallery(fromGallery = false)
+                            takePhoto(
+                                activity = activity,
+                                controller = controller,
+                                onPhotoTaken = viewModel::onTakePhoto
+                            )
+                        }
+                    )
+                }
             }
+
         }
+
     }
 }
 
@@ -284,6 +308,7 @@ fun CloseAndFlashComponents(navigateBack: () -> Unit, onClickFlash: () -> Unit) 
                 fontWeight = FontWeight.Medium,
                 textAlign = TextAlign.Center,
                 textColor = White,
+                enableOnClick = false
             )
         }
 
@@ -352,9 +377,9 @@ private fun takePhoto(
 }
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
-@Preview(showBackground = true)
+//@Preview(showBackground = true)
 @Composable
-fun ImageCropper(
+fun ImageCropperCamera(
     bitmap: Bitmap? = null,
     onZoom1x: () -> Unit = {},
     onZoom2x: () -> Unit = {},
@@ -413,13 +438,24 @@ fun ImageCropper(
                     .border(
                         border = BorderStroke(5.sdp, Color.White),
                         shape = RoundedCornerShape(12.sdp)
-                    )
-            ) {
+                    ),
+
+                ) {
                 croppedImageBitmap?.let {
                     Image(
                         modifier = Modifier
+                            .size(minSize.dp)
+                            .clip(RoundedCornerShape(12.sdp))
+                            .border(
+                                border = BorderStroke(5.sdp, Color.White),
+                                shape = RoundedCornerShape(12.sdp)
+                            )
                             .offset(y = 31.sdp)
                             .padding(bottom = 7.sdp),
+                        colorFilter = ColorFilter.tint(
+                            Color.DarkGray,
+                            blendMode = BlendMode.DstOver
+                        ),
                         contentScale = ContentScale.Crop,
                         bitmap = it,
                         contentDescription = stringResource(R.string.image_for_cropping)
@@ -502,7 +538,9 @@ fun ImageCropper(
                 }
                 Spacer(modifier = Modifier.size(18.sdp))
                 ElevatedButton(
-                    onClick = { onClickUsePhoto.invoke(croppedImageBitmap) },
+                    onClick = {
+                        onClickUsePhoto.invoke(croppedImageBitmap)
+                    },
                     shape = RoundedCornerShape(32.sdp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = White,
@@ -521,6 +559,232 @@ fun ImageCropper(
         }
     }
 }
+
+
+@OptIn(ExperimentalComposeApi::class)
+@SuppressLint("UnusedBoxWithConstraintsScope")
+@Preview(showBackground = true)
+@Composable
+fun GalleryImageCropper(
+    bitmap: Bitmap? = null,
+    onClickCancel: () -> Unit = {},
+    onClickUsePhoto: (ImageBitmap) -> Unit = {},
+) {
+    BoxWithConstraints {
+        val minSize = MIN_SIZE_OF_CROPPED_IMAGE_OVERLAY
+        var overlayWidth by remember { mutableFloatStateOf(minSize) }
+        var overlayHeight by remember { mutableFloatStateOf(minSize) }
+
+        val overlayWidthInDp: Dp
+        val overlayHeightInDp: Dp
+
+        with(LocalDensity.current) {
+            overlayWidthInDp = overlayWidth.toDp()
+            overlayHeightInDp = overlayHeight.toDp()
+        }
+
+        val imageWidth = bitmap?.width?.toFloat()
+        val imageHeight = bitmap?.height?.toFloat()
+
+
+        // Load the image with correct scaling mode
+        Image(
+            modifier = Modifier
+                .fillMaxSize(),
+            contentScale = ContentScale.Crop,  // Make sure it's aligned with the displayed image
+            painter = rememberAsyncImagePainter(
+                model = SkinDiseaseAppIcons.humanBody
+            ),
+            contentDescription = stringResource(R.string.image_for_cropping)
+        )
+
+        var extractedBitmap = extractImageForOverlay(
+            bitmap,
+            overlayWidth,
+            overlayHeight,
+            imageWidth!!,
+            imageHeight!!,
+            minSize // 550f x 550f
+        )
+
+
+        var imageBitmap by remember { mutableStateOf(extractedBitmap?.asImageBitmap()) }
+        val zoomableImageBitmap = remember { mutableStateOf<ImageBitmap?>(imageBitmap) }
+        val scope = rememberCoroutineScope()
+
+
+        val zoomableImageModifier = Modifier
+            .size(minSize.dp)
+            .clip(RoundedCornerShape(12.sdp))
+            .border(
+                border = BorderStroke(5.sdp, Color.White),
+                shape = RoundedCornerShape(12.sdp)
+            )
+            .padding(3.sdp)
+
+
+
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.SpaceBetween,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+
+            Spacer(modifier = Modifier.size(12.sdp))
+            ElevatedButton(
+                modifier = Modifier
+                    .wrapContentWidth()
+                    .align(Alignment.CenterHorizontally)
+                    .padding(all = 12.sdp),
+                shape = RoundedCornerShape(32.sdp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Green,
+                    contentColor = Color.White
+                ),
+                onClick = { /* Handle instructions click */ },
+            ) {
+
+                CommonText(
+                    modifier = Modifier.padding(3.sdp),
+                    text = stringResource(R.string.instructions),
+                    textSize = 12.ssp,
+                    fontFamily = medium,
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.Center,
+                    textColor = White,
+                    enableOnClick = false
+                )
+            }
+            Spacer(modifier = Modifier.weight(1f)) // Push other content down
+
+            // Overlay box with border
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .size(overlayWidthInDp, overlayHeightInDp)
+                    .border(
+                        border = BorderStroke(5.sdp, Color.White),
+                        shape = RoundedCornerShape(12.sdp)
+                    )
+            ) {
+                imageBitmap?.let {
+                    ZoomableImage(
+                        colorFilter = ColorFilter.tint(
+                            Color.DarkGray,
+                            blendMode = BlendMode.DstOver
+                        ),
+                        modifier = zoomableImageModifier,
+                        contentScale = ContentScale.Crop,
+                        imageBitmap = it,
+                        contentDescription = stringResource(R.string.image_for_cropping),
+                        clipTransformToContentScale = false,
+                        limitPan = false,
+                        onGestureEnd = { zoomData ->
+                            scope.launch {
+                                // Apply zoom, pan, and rotation transformations to the bitmap
+                                val transformedBitmap = applyZoomPanRotation(
+                                    originalBitmap = it.asAndroidBitmap(),
+                                    zoomData = zoomData,
+                                    imageWidth = imageWidth,
+                                    imageHeight = imageHeight
+                                )
+
+                                // Update the displayed image with the transformed bitmap
+                                zoomableImageBitmap.value = transformedBitmap?.asImageBitmap()
+                            }
+                        }
+                    )
+                }
+
+            }
+
+            Spacer(modifier = Modifier.weight(1f)) // Push other content down
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 24.sdp, start = 12.sdp, end = 12.sdp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.Bottom
+            ) {
+                ElevatedButton(
+                    onClick = { onClickCancel() },
+                    shape = RoundedCornerShape(32.sdp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = White,
+                        contentColor = Black
+                    )
+                ) {
+                    CommonText(
+                        text = stringResource(R.string.cancel),
+                        fontFamily = medium,
+                        textColor = Black,
+                        textSize = 12.ssp,
+                        enableOnClick = false
+                    )
+                }
+                Spacer(modifier = Modifier.size(18.sdp))
+                ElevatedButton(
+                    onClick = {
+                        zoomableImageBitmap.value?.let { croppedBitmap ->
+                            onClickUsePhoto.invoke(croppedBitmap)
+                        }
+                    },
+                    shape = RoundedCornerShape(32.sdp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = White,
+                        contentColor = Black
+                    )
+                ) {
+                    CommonText(
+                        text = stringResource(R.string.scan_image),
+                        fontFamily = medium,
+                        textColor = Black,
+                        textSize = 12.ssp,
+                        enableOnClick = false
+                    )
+                }
+            }
+        }
+
+    }
+}
+
+
+fun applyZoomPanRotation(
+    originalBitmap: Bitmap?,
+    zoomData: ZoomData,
+    imageWidth: Float,
+    imageHeight: Float,
+): Bitmap? {
+    originalBitmap?.let {
+        val matrix = Matrix().apply {
+            // Apply zoom
+            postScale(zoomData.zoom, zoomData.zoom)
+
+            // Apply pan (translation)
+            postTranslate(zoomData.pan.x, zoomData.pan.y)
+
+            // Apply rotation (rotation is around the center of the bitmap)
+            postRotate(zoomData.rotation, imageWidth / 2, imageHeight / 2)
+        }
+
+        // Create a new bitmap with the transformed matrix applied
+        val transformedBitmap = Bitmap.createBitmap(
+            it,
+            0,
+            0,
+            it.width,    // Use original bitmap width
+            it.height,   // Use original bitmap height
+            matrix,
+            true
+        )
+
+        return transformedBitmap
+    }
+    return null
+}
+
 
 fun extractImageForOverlay(
     bitmap: Bitmap?,
